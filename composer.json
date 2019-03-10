@@ -1,0 +1,52 @@
+{
+  "name": "thorazine/analytics",
+  "description": "Laravel 5 package to retrieve Google Analytics data.",
+  "keywords": [
+    "google",
+    "analytics",
+    "laravel"
+  ],
+  "homepage": "https://github.com/thorazine/analytics",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Matthijs Openneer",
+      "email": "matthijs.openneer@gmail.com",
+      "homepage": "https://matthijs.openneer.com",
+      "role": "Developer"
+    }
+  ],
+  "require": {
+    "php" : "^7.2",
+    "google/apiclient" : "^2.0",
+    "laravel/framework": "~5.8.0",
+    "nesbot/carbon": "^1.21 | ^2.0"
+
+  },
+  "require-dev": {
+    "phpunit/phpunit" : "^8.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Thorazine\\Analytics\\": "src"
+    }
+  },
+  "extra":{
+    "laravel":{
+      "providers":[
+        "Thorazine\\Analytics\\AnalyticsServiceProvider"
+      ],
+      "aliases":{
+        "Analytics": "Thorazine\\Analytics\\AnalyticsFacade"
+      }
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Thorazine\\Analytics\\Tests\\": "tests"
+    }
+  },
+  "config": {
+    "sort-packages": true
+  }
+}
