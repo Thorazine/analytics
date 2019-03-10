@@ -3,7 +3,7 @@
 namespace Thorazine\Analytics;
 
 use Illuminate\Support\ServiceProvider;
-use Spatie\Analytics\Exceptions\InvalidConfiguration;
+// use Spatie\Analytics\Exceptions\InvalidConfiguration;
 
 class AnalyticsServiceProvider extends ServiceProvider
 {
@@ -24,23 +24,11 @@ class AnalyticsServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__.'/../config/analytics.php', 'analytics');
 
-        // $this->app->bind(AnalyticsClient::class, function () {
-        //     $analyticsConfig = config('analytics');
-
-        //     return AnalyticsClientFactory::createForConfig($analyticsConfig);
-        // });
-
         $this->app->bind(Analytics::class, function () {
-            // $analyticsConfig = config('analytics');
-
-            // $this->guardAgainstInvalidConfiguration($analyticsConfig);
-
-            // $client = app(AnalyticsClient::class);
-
-            return new Analytics($client, $analyticsConfig['view_id']);
+            return new Analytics();
         });
 
-        $this->app->alias(Analytics::class, 'analytics');
+        $this->app->alias(Analytics::class, 'laravel-analytics');
     }
 
     // protected function guardAgainstInvalidConfiguration(array $analyticsConfig = null)

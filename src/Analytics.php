@@ -1,88 +1,122 @@
 <?php
 
-namespace Spatie\Analytics;
+namespace Thorazine\Analytics;
 
 use Carbon\Carbon;
+use Google_Client;
 use Google_Service_Analytics;
-use Illuminate\Support\Traits\Macroable;
+use Illuminate\Support\Collection;
+use Cache;
 
 class Analytics
 {
-    use Macroable;
 
-    /** @var \Spatie\Analytics\AnalyticsClient */
-    protected $client;
 
     /** @var string */
     protected $viewId;
 
-    /**
-     * @param \Spatie\Analytics\AnalyticsClient $client
-     * @param string                            $viewId
-     */
-    public function __construct(Client $client, string $viewId)
-    {
-        $this->client = $client;
+    /** @var string */
+    protected $developerKey;
 
-        $this->viewId = $viewId;
-    }
 
-    /**
-     * @param string $viewId
-     *
-     * @return $this
-     */
-    public function setViewId(string $viewId)
+    public function client($applicationName, $developerKey, $viewId)
     {
         $this->viewId = $viewId;
+
+        $client = new Google_Client();
+        $client->setApplicationName($applicationName);
+        $client->setAuthConfig($developerKey);
+
+        $client->setScopes([
+            Google_Service_Analytics::ANALYTICS_READONLY,
+        ]);
+        $this->analytics = new Google_Service_Analytics($client);
 
         return $this;
     }
 
-    public function fetchVisitorsAndPageViews(Period $period): Collection
+    /**
+     * Get "realtime" data
+     * @param  string $metrics    rt:activeUsers
+     * @param  string $dimensions rt:pagePath
+     * @param  string $filters    rt:pagePath=~/tests/22/question
+     * @return array
+     */
+    public function realtime($metrics = '', $dimensions = '', $filters = '')
     {
-        $response = $this->performQuery(
-            $period,
-            'ga:users,ga:pageviews',
-            ['dimensions' => 'ga:date,ga:pageTitle']
-        );
+        $params = $this->getParams($metrics, $dimensions, $filters);
 
-        return collect($response['rows'] ?? [])->map(function (array $dateRow) {
-            return [
-                'date' => Carbon::createFromFormat('Ymd', $dateRow[0]),
-                'pageTitle' => $dateRow[1],
-                'visitors' => (int) $dateRow[2],
-                'pageViews' => (int) $dateRow[3],
-            ];
-        });
+        $response = $this->analytics->data_realtime->call('get', [['ids' => "ga:".$this->viewId]+$params], 'Google_Service_Analytics_RealtimeData');
+
+        return ($response['rows'] ?? []);
     }
 
     /**
-     * Call the query method on the authenticated client.
-     *
-     * @param Period $period
-     * @param string $metrics
-     * @param array  $others
-     *
-     * @return array|null
+     * Get periodical data
+     * @param  string $metrics    rt:activeUsers
+     * @param  string $metrics    rt:activeUsers
+     * @param  string $metrics    rt:activeUsers
+     * @param  string $dimensions rt:pagePath
+     * @param  string $filters    rt:pagePath=~/tests/22/question
+     * @return array
      */
-    public function performQuery(Period $period, string $metrics, array $others = [])
+    public function period($metrics = '', $dimensions = '', $filters = '', $cacheTime = null)
     {
-        return $this->client->performQuery(
-            $this->viewId,
-            $period->startDate,
-            $period->endDate,
-            $metrics,
-            $others
-        );
+        $params = $this->getParams($metrics, $dimensions, $filters);
+        $endDate = ($to) ? $to : $this->endDate->format('Y-m-d');
+        $startDate = ($from) ? $from : $this->startDate->format('Y-m-d');
+
+        $result = Cache::remember('key', 0, function() use ($metrics, $params, $startDate, $endDate) {
+            $response = $this->analytics->data_ga->get(
+                'ga:'.$this->viewId,
+                $startDate,
+                $endDate,
+                $metrics,
+                $params
+            );
+
+            return ($response['rows'] ?? []);
+        });
+
+        $this->reset();
+
+        return $result;
     }
 
-    /*
-     * Get the underlying Google_Service_Analytics object. You can use this
-     * to basically call anything on the Google Analytics API.
-     */
-    public function getAnalyticsService(): Google_Service_Analytics
+
+    private function getParams($metrics, $dimensions, $filters)
     {
-        return $this->client->getAnalyticsService();
+        $params = [];
+        $params = ($metrics) ? array_merge($params, ['metrics' => $metrics]) : $params;
+        $params = ($dimensions) ? array_merge($params, ['dimensions' => $dimensions]) : $params;
+        $params = ($filters) ? array_merge($params, ['filters' => $filters]) : $params;
+        return $params;
+    }
+
+
+    public function days(int $numberOfDays): self
+    {
+        $this->endDate = Carbon::today()->subDays(1)->startOfDay(); // do not include today
+        $this->startDate = Carbon::today()->subDays($numberOfDays)->startOfDay();
+        return $this;
+    }
+
+    public function months(int $numberOfMonths): self
+    {
+        $this->endDate = Carbon::today()->subDays(1)->startOfDay(); // do not include today
+        $this->startDate = Carbon::today()->subMonths($numberOfMonths)->startOfDay();
+        return $this;
+    }
+
+    public function years(int $numberOfYears): self
+    {
+        $this->endDate = Carbon::today()->subDays(1)->startOfDay(); // do not include today
+        $this->startDate = Carbon::today()->subYears($numberOfYears)->startOfDay();
+        return $this;
+    }
+
+    public function timezone($timezone)
+    {
+        $this->timezone = $timezone;
     }
 }
