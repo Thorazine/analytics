@@ -158,7 +158,7 @@ class Analytics
      */
     private function cacheKey($metrics, $params)
     {
-        $variables = [$this->timezone, $this->startDate, $this->endDate, $this->viewId, $params, $metrics];
+        $variables = [Carbon::now($this->timezone)->utcOffset(), $this->startDate, $this->endDate, $this->viewId, $params, $metrics];
         return serialize($variables);
     }
 
@@ -169,6 +169,7 @@ class Analytics
     private function reset()
     {
         $this->days(7);
+        $this->cacheTime = 0;
         return $this;
     }
 
