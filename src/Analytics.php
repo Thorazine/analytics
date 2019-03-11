@@ -87,7 +87,7 @@ class Analytics
         $this->endDate = ($to) ? $to : $this->endDate->format('Y-m-d');
         $this->startDate = ($from) ? $from : $this->startDate->format('Y-m-d');
 
-        $result = Cache::remember($this->cacheKey($metrics, $params), 0, function() use ($metrics, $params) {
+        $result = Cache::remember($this->cacheKey($metrics, $params), $this->calculateSecondsTillEndOfDayWithUsersTimezone(), function() use ($metrics, $params) {
             $response = $this->analytics->data_ga->get(
                 'ga:'.$this->viewId,
                 $this->startDate,
