@@ -142,9 +142,9 @@ class Analytics
         return $this;
     }
 
-    public function dropCache($dropCache)
+    public function dropCache()
     {
-        $this->dropCache = $dropCache;
+        $this->dropCache = true;
         return $this;
     }
 
@@ -187,7 +187,7 @@ class Analytics
     {
         $this->days(7);
         $this->cacheTime = 0;
-        $this->dropCache false;
+        $this->dropCache = false;
         return $this;
     }
 
