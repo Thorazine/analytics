@@ -64,7 +64,10 @@ class Analytics
 
         $this->reset();
 
-        return ($response['rows'] ?? []);
+        return [
+            'total' => (int)$response['totalResults'],
+            'rows' => ($response['rows'] ?? []),
+        ];
     }
 
     /**
