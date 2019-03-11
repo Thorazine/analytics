@@ -25,6 +25,8 @@ class Analytics
     /** @var string */
     protected $endDate;
 
+    protected $dropCache = false;
+
 
     public function __construct()
     {
@@ -140,6 +142,12 @@ class Analytics
         return $this;
     }
 
+    public function dropCache($dropCache)
+    {
+        $this->dropCache = $dropCache;
+        return $this;
+    }
+
 
     /**
      * Calculate the time till the end of the day
@@ -162,7 +170,13 @@ class Analytics
     private function cacheKey($metrics, $params)
     {
         $variables = [Carbon::now($this->timezone)->utcOffset(), $this->startDate, $this->endDate, $this->viewId, $params, $metrics];
-        return serialize($variables);
+        $key = serialize($variables);
+
+        if($this->dropCache) {
+            Cache::forget($key);
+        }
+
+        return $key;
     }
 
     /**
@@ -173,6 +187,7 @@ class Analytics
     {
         $this->days(7);
         $this->cacheTime = 0;
+        $this->dropCache false;
         return $this;
     }
 
